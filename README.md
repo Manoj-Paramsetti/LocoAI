@@ -1,5 +1,7 @@
 # evalkit
 
+![evals](https://img.shields.io/endpoint?url=https://manoj-paramsetti.github.io/LocoAI/badge.json)
+
 A reusable harness for evaluating AI models. Plug in a dataset, point it at a model, choose graders, and get a report. CI fails when scores drop.
 
 ```sh
