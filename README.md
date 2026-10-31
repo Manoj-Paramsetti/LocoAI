@@ -6,7 +6,7 @@ A reusable harness for evaluating AI models. Plug in a dataset, point it at a mo
 
 ```sh
 go build -o evalkit ./cmd/evalkit
-./evalkit run suites/smoke/suite.yaml --site site    # offline, no API key
+./evalkit run suites/smoke/suite.yaml                # offline, no API key
 
 export ANTHROPIC_API_KEY=...                         # spends real money
 ./evalkit run suites/prompt-injection/suite.yaml
@@ -16,13 +16,21 @@ export ANTHROPIC_API_KEY=...                         # spends real money
 
 | Command | Purpose |
 | --- | --- |
-| `evalkit run <suite> [--out runs] [--baseline run.json] [--model id] [--site dir]` | Run a suite and apply the gate |
+| `evalkit run <suite> [--out runs] [--baseline run.json] [--model id]` | Run a suite, write its JSON and HTML report, and apply the gate |
 | `evalkit validate <suite>` | Check suite, dataset and graders with no model calls |
 | `evalkit compare <base.json> <current.json>` | Diff two runs |
 | `evalkit promote <run.json> <baseline.json>` | Make a run the new baseline |
-| `evalkit report --out site <run.json>...` | Build the HTML report and `badge.json` |
+| `evalkit report --out site <run.json>...` | Build a separate site from chosen runs, with `badge.json` |
 
 Exit codes: `0` passed, `1` gate failed, `2` could not run. CI can tell a worse model from a broken harness.
+
+Each run writes a JSON result and a web page named with its start time (UTC) and suite, and refreshes an index of every run:
+
+```
+runs/smoke/20261031T133825Z-smoke-3d44ac.json
+runs/smoke/20261031T133825Z-smoke-3d44ac.html
+runs/index.html
+```
 
 ## Writing a suite
 
