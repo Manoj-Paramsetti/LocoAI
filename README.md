@@ -94,16 +94,6 @@ flowchart LR
 - **Model output is untrusted.** The judge gets it fenced and told not to follow it, and the HTML report escapes it.
 - **Claude refusal fallbacks are on by default** on models that support them, and a fallback answer is not the requested model's answer. Those cases are flagged in the output and report with the model that served them. Set `provider: {fallbacks: false}` to score only the requested model.
 
-## CI
-
-`.github/workflows/evals.yml` tests the harness, runs the smoke suite, runs the live suites when the `ANTHROPIC_API_KEY` secret exists, and publishes the report to GitHub Pages from `main`. Live suites run on every pull request and cost money each time.
-
-Point a README badge at the published file:
-
-```
-https://img.shields.io/endpoint?url=https://<user>.github.io/<repo>/badge.json
-```
-
 ## License
 
 Apache License 2.0. See [LICENSE](LICENSE).
