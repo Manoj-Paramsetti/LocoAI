@@ -101,3 +101,7 @@ Point a README badge at the published file:
 ```
 https://img.shields.io/endpoint?url=https://<user>.github.io/<repo>/badge.json
 ```
+
+## License
+
+Apache License 2.0. See [LICENSE](LICENSE).
