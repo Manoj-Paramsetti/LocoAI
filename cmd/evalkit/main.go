@@ -14,6 +14,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"time"
 
 	"github.com/Manoj-Paramsetti/LocoAI/internal/config"
@@ -29,7 +30,7 @@ import (
 
 const usage = `evalkit: run eval suites against AI models
 
-  evalkit run <suite.yaml> [--out runs] [--baseline run.json] [--model id] [--site dir]
+  evalkit run <suite.yaml> [--out runs] [--baseline run.json] [--model id]
   evalkit validate <suite.yaml>
   evalkit compare <base.json> <current.json>
   evalkit promote <run.json> <baseline.json>
@@ -168,7 +169,6 @@ func cmdRun(args []string, out io.Writer) error {
 	dir := fs.String("out", "runs", "directory for run results")
 	baseline := fs.String("baseline", "", "run file to check for regressions against")
 	modelID := fs.String("model", "", "override the suite's model")
-	site := fs.String("site", "", "also render an HTML report here")
 	pos, err := parse(fs, args)
 	if err != nil {
 		return err
@@ -200,7 +200,7 @@ func cmdRun(args []string, out io.Writer) error {
 	}
 	run := &model.Run{
 		SchemaVersion: model.SchemaVersion,
-		ID:            runID(started),
+		ID:            runID(started, p.suite.Name),
 		Suite:         p.suite.Name,
 		Provider:      p.suite.Provider.Name,
 		Model:         p.suite.Model,
@@ -217,18 +217,20 @@ func cmdRun(args []string, out io.Writer) error {
 		return err
 	}
 	printRun(out, run)
-	fmt.Fprintf(out, "results: %s\n", path)
+	fmt.Fprintf(out, "json: %s\n", path)
+	// The results are already saved, so a report problem must not hide the
+	// gate verdict.
+	if err := writeReports(*dir); err != nil {
+		fmt.Fprintln(os.Stderr, "warning: report not written:", err)
+	} else {
+		fmt.Fprintf(out, "page: %s\n", report.PagePath(run, *dir))
+		fmt.Fprintf(out, "all runs: %s\n", filepath.Join(*dir, "index.html"))
+	}
 
 	var cmp *report.Comparison
 	if base != nil {
 		cmp = report.Compare(base, run)
 		printComparison(out, cmp)
-	}
-	if *site != "" {
-		if err := report.WriteSite([]*model.Run{run}, *site); err != nil {
-			return err
-		}
-		fmt.Fprintf(out, "report: %s/index.html\n", *site)
 	}
 	failures := report.Gate(run, cmp, p.suite.Gate.RegressionTolerance)
 	for _, f := range failures {
@@ -241,10 +243,21 @@ func cmdRun(args []string, out io.Writer) error {
 	return nil
 }
 
-func runID(t time.Time) string {
+// writeReports rebuilds every page under dir from the stored JSON.
+func writeReports(dir string) error {
+	runs, problems := report.LoadAll(dir)
+	for _, err := range problems {
+		fmt.Fprintln(os.Stderr, "warning: skipped:", err)
+	}
+	return report.WriteSite(runs, dir)
+}
+
+// runID names a run's files: when it started, then which suite. The suffix
+// keeps two runs in the same second from overwriting each other.
+func runID(t time.Time, suite string) string {
 	b := make([]byte, 3)
 	rand.Read(b)
-	return t.Format("20060102T150405Z") + "-" + hex.EncodeToString(b)
+	return t.Format("20060102T150405Z") + "-" + report.Slug(suite) + "-" + hex.EncodeToString(b)
 }
 
 func printRun(out io.Writer, r *model.Run) {

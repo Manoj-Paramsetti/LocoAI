@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -33,6 +34,33 @@ func TestGateExitPaths(t *testing.T) {
 	err := dispatch([]string{"run", suiteFile(t, "1", `"no"`), "--out", out}, io.Discard)
 	if !errors.Is(err, errGate) {
 		t.Fatalf("failing run: %v", err)
+	}
+}
+
+func TestRunWritesJSONAndPage(t *testing.T) {
+	out := t.TempDir()
+	if err := dispatch([]string{"run", suiteFile(t, "1", `"yes"`), "--out", out}, io.Discard); err != nil {
+		t.Fatal(err)
+	}
+	if err := dispatch([]string{"run", suiteFile(t, "1", `"yes"`), "--out", out}, io.Discard); err != nil {
+		t.Fatal(err)
+	}
+	name := regexp.MustCompile(`^\d{8}T\d{6}Z-t-[0-9a-f]{6}\.(json|html)$`)
+	files, _ := filepath.Glob(filepath.Join(out, "t", "*"))
+	if len(files) != 4 {
+		t.Fatalf("want 2 runs with json and html, got %v", files)
+	}
+	for _, f := range files {
+		if !name.MatchString(filepath.Base(f)) {
+			t.Errorf("bad file name %s", f)
+		}
+	}
+	index, err := os.ReadFile(filepath.Join(out, "index.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.Count(string(index), `href="t/`); got < 2 {
+		t.Fatalf("index links %d runs", got)
 	}
 }
 

@@ -76,6 +76,31 @@ func TestStoreRoundTrip(t *testing.T) {
 	}
 }
 
+func TestSlug(t *testing.T) {
+	for in, want := range map[string]string{"smoke": "smoke", "My Suite/v2": "my-suite-v2", "../x": "x", "///": "suite"} {
+		if got := Slug(in); got != want {
+			t.Errorf("Slug(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
+func TestLoadAllSkipsBadFiles(t *testing.T) {
+	dir := t.TempDir()
+	if _, err := Save(mkRun(0.5, cr("a", true)), dir); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "broken.json"), []byte("{"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "badge.json"), []byte(`{"schemaVersion":1}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	runs, problems := LoadAll(dir)
+	if len(runs) != 1 || len(problems) != 1 {
+		t.Fatalf("runs=%d problems=%v", len(runs), problems)
+	}
+}
+
 func TestSiteEscapesModelOutput(t *testing.T) {
 	c := cr("a", false)
 	c.Output = `<script>alert(1)</script>`
@@ -83,7 +108,7 @@ func TestSiteEscapesModelOutput(t *testing.T) {
 	if err := WriteSite([]*model.Run{mkRun(0.5, c)}, dir); err != nil {
 		t.Fatal(err)
 	}
-	page, err := os.ReadFile(filepath.Join(dir, "runs", "r1.html"))
+	page, err := os.ReadFile(PagePath(mkRun(0), dir))
 	if err != nil {
 		t.Fatal(err)
 	}

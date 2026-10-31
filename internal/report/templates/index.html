@@ -3,9 +3,9 @@
 <div class="scroll"><table><tr><th>Suite</th><th>Model</th><th>Pass rate</th><th>Threshold</th><th>Cases</th><th>Run</th></tr>
 {{range .Latest}}<tr><td>{{.Suite}}</td><td>{{.Model}}</td>
 <td class="{{if ge .Summary.PassRate .Threshold}}ok{{else}}bad{{end}}">{{pct .Summary.PassRate}}</td>
-<td>{{pct .Threshold}}</td><td>{{.Summary.Passed}}/{{.Summary.Total}}</td><td><a href="runs/{{.ID}}.html">{{when .StartedAt}}</a></td></tr>{{end}}
+<td>{{pct .Threshold}}</td><td>{{.Summary.Passed}}/{{.Summary.Total}}</td><td><a href="{{slug .Suite}}/{{.ID}}.html">{{when .StartedAt}}</a></td></tr>{{end}}
 </table></div>
 <h2>History</h2>
 <div class="scroll"><table><tr><th>When</th><th>Suite</th><th>Model</th><th>Pass rate</th></tr>
-{{range .All}}<tr><td><a href="runs/{{.ID}}.html">{{when .StartedAt}}</a></td><td>{{.Suite}}</td><td>{{.Model}}</td><td>{{pct .Summary.PassRate}}</td></tr>{{end}}
+{{range .All}}<tr><td><a href="{{slug .Suite}}/{{.ID}}.html">{{when .StartedAt}}</a></td><td>{{.Suite}}</td><td>{{.Model}}</td><td>{{pct .Summary.PassRate}}</td></tr>{{end}}
 </table></div></body></html>

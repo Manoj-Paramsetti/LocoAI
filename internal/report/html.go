@@ -17,6 +17,7 @@ var templateFS embed.FS
 
 var templates = template.Must(template.New("").Funcs(template.FuncMap{
 	"pct":  func(f float64) string { return template.HTMLEscapeString(formatPct(f)) },
+	"slug": Slug,
 	"when": func(t time.Time) string { return t.UTC().Format("2006-01-02 15:04 UTC") },
 }).ParseFS(templateFS, "templates/*.html"))
 
@@ -28,7 +29,7 @@ func formatPct(f float64) string {
 // WriteSite renders an index of the latest run per suite and model, a page per
 // run, and a shields.io endpoint badge. html/template escapes model output.
 func WriteSite(runs []*model.Run, dir string) error {
-	if err := os.MkdirAll(filepath.Join(dir, "runs"), 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
 	sort.Slice(runs, func(i, j int) bool { return runs[i].StartedAt.After(runs[j].StartedAt) })
@@ -41,7 +42,11 @@ func WriteSite(runs []*model.Run, dir string) error {
 			latest[key] = r
 			rows = append(rows, r)
 		}
-		if err := render(filepath.Join(dir, "runs", r.ID+".html"), "run.html", r); err != nil {
+		page := PagePath(r, dir)
+		if err := os.MkdirAll(filepath.Dir(page), 0o755); err != nil {
+			return err
+		}
+		if err := render(page, "run.html", r); err != nil {
 			return err
 		}
 	}
