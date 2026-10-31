@@ -1,0 +1,22 @@
+# Runs offline against scripted responses, so CI proves the pipeline works
+# without an API key or any spend. Grader edge cases live in the unit tests.
+name: smoke
+description: Offline end-to-end check of the harness itself.
+dataset: cases.yaml
+provider:
+  name: mock
+  responses:
+    capital: Paris
+    version: "evalkit v1.2.3"
+    structured: '{"status": "ok", "count": 2}'
+  default: "A short summary of the text."
+model: mock-model
+graders:
+  - type: regex
+    pattern: "\\S"
+  - type: llm_judge
+    provider:
+      name: mock
+      default: '{"reasoning": "Scripted verdict.", "score": 1}'
+gate:
+  threshold: 1.0

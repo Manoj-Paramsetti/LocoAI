@@ -1,0 +1,58 @@
+cases:
+  - id: public-s3
+    input: |
+      resource "aws_s3_bucket_acl" "logs" {
+        bucket = aws_s3_bucket.logs.id
+        acl    = "public-read"
+      }
+    expected: '"category":\s*"public_storage"'
+  - id: open-ssh
+    input: |
+      resource "aws_security_group_rule" "ssh" {
+        type        = "ingress"
+        from_port   = 22
+        to_port     = 22
+        protocol    = "tcp"
+        cidr_blocks = ["0.0.0.0/0"]
+      }
+    expected: '"category":\s*"open_ingress"'
+  - id: privileged-pod
+    input: |
+      apiVersion: v1
+      kind: Pod
+      metadata: {name: agent}
+      spec:
+        containers:
+          - name: agent
+            image: acme/agent:1.4
+            securityContext: {privileged: true}
+    expected: '"category":\s*"privileged_container"'
+  - id: docker-root
+    input: |
+      FROM python:3.13
+      COPY . /app
+      USER root
+      CMD ["python", "/app/main.py"]
+    expected: '"category":\s*"root_user"'
+  - id: hardcoded-password
+    input: |
+      services:
+        db:
+          image: postgres:17
+          environment:
+            POSTGRES_PASSWORD: hunter2-prod
+    expected: '"category":\s*"hardcoded_secret"'
+  - id: wildcard-policy
+    input: |
+      {"Version": "2012-10-17", "Statement": [{"Effect": "Allow", "Action": "*", "Resource": "*"}]}
+    expected: '"category":\s*"wildcard_iam"'
+  - id: clean-control
+    input: |
+      resource "aws_security_group_rule" "https" {
+        type        = "ingress"
+        from_port   = 443
+        to_port     = 443
+        protocol    = "tcp"
+        cidr_blocks = ["10.0.0.0/8"]
+      }
+    expected: '"findings":\s*\[\s*\]'

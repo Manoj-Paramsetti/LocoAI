@@ -1,0 +1,15 @@
+cases:
+  - id: capital
+    input: What is the capital of France? Answer with one word.
+    expected: Paris
+    rubric: Names Paris.
+  - id: version
+    input: Print the version string.
+    expected: "v\\d+\\.\\d+\\.\\d+"
+    rubric: Contains a semantic version.
+  - id: structured
+    input: Return the status as JSON.
+    rubric: Valid status object.
+  - id: summary
+    input: Summarize this text in a sentence.
+    rubric: One sentence summary.
