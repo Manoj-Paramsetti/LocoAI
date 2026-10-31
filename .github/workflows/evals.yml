@@ -1,0 +1,74 @@
+name: evals
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: test -z "$(gofmt -l .)"
+      - run: go vet ./...
+      - run: go test -race ./...
+
+  evals:
+    needs: test
+    runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go build -o evalkit ./cmd/evalkit
+      - name: Smoke suite (offline)
+        run: ./evalkit run suites/smoke/suite.yaml --baseline baselines/smoke.json
+      - name: Live suites
+        # Secrets are unavailable to fork PRs, so those run the smoke suite only.
+        if: env.ANTHROPIC_API_KEY != ''
+        run: |
+          status=0
+          for suite in prompt-injection infra-misconfig; do
+            args=()
+            [ -f "baselines/$suite.json" ] && args=(--baseline "baselines/$suite.json")
+            ./evalkit run "suites/$suite/suite.yaml" "${args[@]}" || status=$?
+          done
+          exit "$status"
+      - name: Build report
+        if: always()
+        run: ./evalkit report --out site runs/*/*.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-results
+          path: |
+            runs/
+            site/
+      - uses: actions/upload-pages-artifact@v3
+        if: always() && github.ref == 'refs/heads/main'
+        with:
+          path: site
+
+  publish:
+    needs: evals
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
