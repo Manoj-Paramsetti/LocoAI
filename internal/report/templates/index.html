@@ -1,0 +1,11 @@
+<!doctype html><html lang="en"><head>{{template "style"}}<title>Eval Reports</title></head><body>
+<h1>Eval Reports</h1><p class="muted">Latest run per suite and model.</p>
+<div class="scroll"><table><tr><th>Suite</th><th>Model</th><th>Pass rate</th><th>Threshold</th><th>Cases</th><th>Run</th></tr>
+{{range .Latest}}<tr><td>{{.Suite}}</td><td>{{.Model}}</td>
+<td class="{{if ge .Summary.PassRate .Threshold}}ok{{else}}bad{{end}}">{{pct .Summary.PassRate}}</td>
+<td>{{pct .Threshold}}</td><td>{{.Summary.Passed}}/{{.Summary.Total}}</td><td><a href="runs/{{.ID}}.html">{{when .StartedAt}}</a></td></tr>{{end}}
+</table></div>
+<h2>History</h2>
+<div class="scroll"><table><tr><th>When</th><th>Suite</th><th>Model</th><th>Pass rate</th></tr>
+{{range .All}}<tr><td><a href="runs/{{.ID}}.html">{{when .StartedAt}}</a></td><td>{{.Suite}}</td><td>{{.Model}}</td><td>{{pct .Summary.PassRate}}</td></tr>{{end}}
+</table></div></body></html>

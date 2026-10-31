@@ -1,0 +1,19 @@
+<!doctype html><html lang="en"><head>{{template "style"}}<title>{{.Suite}} Run</title></head><body>
+<p><a href="../index.html">All reports</a></p><h1>{{.Suite}}</h1>
+<p class="muted">{{.Model}} via {{.Provider}} · {{when .StartedAt}}{{if .Commit}} · {{.Commit}}{{end}}</p>
+<div class="stats">
+<div><b class="{{if ge .Summary.PassRate .Threshold}}ok{{else}}bad{{end}}">{{pct .Summary.PassRate}}</b>pass rate (threshold {{pct .Threshold}})</div>
+<div><b>{{.Summary.Passed}}/{{.Summary.Total}}</b>passed</div>
+<div><b>{{.Summary.Errored}}</b>errored</div>
+<div><b>{{.Summary.FellBack}}</b>served by fallback</div>
+<div><b>{{.Summary.InputTokens}} / {{.Summary.OutputTokens}}</b>tokens in / out</div>
+</div>
+<h2>Cases</h2>
+{{range .Cases}}<details{{if not .Passed}} open{{end}}><summary><span class="{{if .Passed}}ok{{else}}bad{{end}}">{{if .Error}}ERROR{{else if .Passed}}PASS{{else}}FAIL{{end}}</span> {{.ID}}{{if .FellBack}} <span class="warn">fallback: {{.ServedModel}}</span>{{end}}{{if eq .StopReason "refusal"}} <span class="warn">refused</span>{{end}}{{if eq .StopReason "max_tokens"}} <span class="warn">truncated</span>{{end}}</summary>
+{{if .Error}}<pre class="bad">{{.Error}}</pre>{{end}}
+<div class="muted">Input</div><pre>{{.Input}}</pre><div class="muted">Output</div><pre>{{.Output}}</pre>
+<div class="scroll"><table><tr><th>Grader</th><th>Score</th><th>Reason</th></tr>
+{{range .Scores}}<tr><td>{{.Grader}}</td><td class="{{if .Passed}}ok{{else}}bad{{end}}">{{printf "%.2f" .Score}}</td><td style="white-space:normal">{{if .Error}}{{.Error}}{{else}}{{.Reason}}{{end}}</td></tr>{{end}}
+</table></div>
+<p class="muted">{{.Attempts}} attempt(s), {{.LatencyMS}} ms</p></details>{{end}}
+</body></html>
